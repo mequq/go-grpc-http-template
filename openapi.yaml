@@ -1,0 +1,111 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: TenantService API
+    version: 0.0.1
+paths:
+    /v1/tenants:
+        get:
+            tags:
+                - TenantService
+            operationId: TenantService_ListTenants
+            parameters:
+                - name: pageSize
+                  in: query
+                  description: page_size is the number of tenants to return per page
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: page_token is the page token to use for pagination
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/org.template.tenant.v1.ListTenantsResponse'
+        post:
+            tags:
+                - TenantService
+            operationId: TenantService_CreateTenant
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/org.template.tenant.v1.Tenant'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/org.template.tenant.v1.Tenant'
+    /v1/tenants/{tenant}:
+        get:
+            tags:
+                - TenantService
+            operationId: TenantService_GetTenant
+            parameters:
+                - name: tenant
+                  in: path
+                  description: The tenant id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/org.template.tenant.v1.Tenant'
+        delete:
+            tags:
+                - TenantService
+            operationId: TenantService_DeleteTenant
+            parameters:
+                - name: tenant
+                  in: path
+                  description: The tenant id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+components:
+    schemas:
+        org.template.tenant.v1.ListTenantsResponse:
+            type: object
+            properties:
+                tenants:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/org.template.tenant.v1.Tenant'
+                    description: tenants is the list of tenants
+                nextPageToken:
+                    type: string
+                    description: next_page_token is the page token to use for pagination
+        org.template.tenant.v1.Tenant:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: resource name of the tenant in the format of "tenants/{tenant_id}"
+                title:
+                    type: string
+                description:
+                    type: string
+                apiKey:
+                    readOnly: true
+                    type: string
+tags:
+    - name: TenantService

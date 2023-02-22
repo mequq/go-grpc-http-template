@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package org.template.tenant.v1;
+
+option java_package = "org.template.tenant.v1alpha1";
+option java_outer_classname = "TenantProto";
+
+option go_package = "github.com/mequq/go-grpc-http-template/tenant/valpha1,tenant";
+
+
+import "validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+
+message Tenant {
+    // resource name of the tenant in the format of "tenants/{tenant_id}"
+    string name = 1 [
+        (validate.rules).string = {
+            // tenant_id must be a valid UUID
+            pattern: "^tenants/[^/]+$"
+            // on create, tenant_id must be empty and does not need to be validated
+            ignore_empty: true
+        }
+    ];
+    string title = 2 [
+        (validate.rules).string = {
+            // title must be between 1 and 100 characters
+            min_len: 1
+            max_len: 100
+            ignore_empty: true
+        }
+    ];
+    string description = 3 [
+        (validate.rules).string = {
+            // description must be between 1 and 1000 characters
+            min_len: 1
+            max_len: 1000
+            ignore_empty: true
+        }
+    ];
+    string api_key = 4 [
+        (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+
+}
+
+message TenantRequest {
+    string name = 1 [
+        (validate.rules).string = {
+            // name must be a valid UUID
+            pattern: "^tenants/[^/]+$"
+        }
+    ];
+}
+
+message TenantsRequest {
+    // page_size is the number of tenants to return per page
+    int32 page_size = 1;
+    // page_token is the page token to use for pagination
+    string page_token = 2;
+}
+
+message ListTenantsResponse {
+    // tenants is the list of tenants
+    repeated Tenant tenants = 1;
+    // next_page_token is the page token to use for pagination
+    string next_page_token = 2;
+}
+
+
+service TenantService {
+    rpc CreateTenant(Tenant) returns (Tenant) {
+        option (google.api.http) = {
+            post: "/v1/tenants"
+            body: "*"
+        };
+    }
+    rpc GetTenant(TenantRequest) returns (Tenant) {
+        option (google.api.http) = {
+            get: "/v1/{name=tenants/*}"
+        };
+    }
+    rpc DeleteTenant(TenantRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/{name=tenants/*}"
+        };
+    }
+    rpc ListTenants(TenantsRequest) returns (ListTenantsResponse) {
+        option (google.api.http) = {
+            get: "/v1/tenants"
+        };
+    }
+}
