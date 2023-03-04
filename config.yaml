@@ -8,7 +8,7 @@ Server:
   http:
     port: 8080
     host: "localhost"
-    production: false
+    production: true
 datasource:
   redis:
     enabled: false

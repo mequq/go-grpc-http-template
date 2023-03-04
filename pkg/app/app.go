@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/mequq/go-grpc-http-template/config"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
@@ -53,7 +54,13 @@ func (a *App) RunGRPC() error {
 // run HTTP server
 func (a *App) RunHTTP() error {
 
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%d", a.cfg.ServerConfig.Http.Host, a.cfg.ServerConfig.Http.Port), a.httpSvr); err != nil {
+	if err := http.ListenAndServe(
+		fmt.Sprintf("%s:%d", a.cfg.ServerConfig.Http.Host, a.cfg.ServerConfig.Http.Port),
+		//add otl to http requests
+		otelhttp.NewHandler(a.httpSvr, "http-server",
+			otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+		),
+	); err != nil {
 		a.logger.Fatal("failed to start app ", zap.Error(err))
 		return err
 	}
