@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mequq/go-grpc-http-template/config"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+
 	"go.uber.org/zap"
 )
 

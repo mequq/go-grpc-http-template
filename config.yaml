@@ -16,6 +16,9 @@ datasource:
     port: 6379
     password: ""
     db: 0
+  sqlite:
+    enabled: true
+    dns: "file:ent?mode=memory&cache=shared&_fk=1"
   mysql:
     host: "localhost"
     port: 3306

@@ -48,3 +48,7 @@ func (t TenantService) GetTenant(ctx context.Context, req *pb.TenantRequest) (*p
 	}, nil
 
 }
+
+func Add(a, b int) int {
+	return a + b
+}

@@ -15,8 +15,9 @@ type (
 	}
 	// DatasourceConfig is the datasource config.
 	DatasourceConfig struct {
-		Mysql MysqlConfig `mapstructure:"mysql"`
-		Redis RedisConfig `mapstructure:"redis"`
+		Mysql  MysqlConfig  `mapstructure:"mysql"`
+		Redis  RedisConfig  `mapstructure:"redis"`
+		Sqlite SqliteConfig `mapstructure:"sqlite"`
 	}
 
 	// viper server config struct
@@ -74,6 +75,11 @@ type (
 		Port     int    `mapstructure:"port"`
 		Password string `mapstructure:"password"`
 		Database int    `mapstructure:"database"`
+	}
+
+	SqliteConfig struct {
+		Enabled bool   `mapstructure:"enabled"`
+		Dns     string `mapstructure:"dns"`
 	}
 )
 

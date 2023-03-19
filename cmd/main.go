@@ -9,11 +9,8 @@ import (
 	"os"
 
 	"github.com/mequq/go-grpc-http-template/config"
-	"github.com/rs/zerolog"
-	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -30,6 +27,7 @@ func main() {
 	cfg := &config.ViperConfig{}
 	conf, err := config.NewConfig("config.yaml")
 	if err != nil {
+
 		panic(err)
 	}
 	// load config
@@ -42,22 +40,28 @@ func main() {
 
 	shutdown, err := initProvider()
 	if err != nil {
-		panic(err)
+		logger.Warn("failed to init tracer  provider", zap.Error(err))
+
 	}
 	defer shutdown(context.Background())
 
 	wireApp, err := wireApp(cfg, logger)
 	if err != nil {
+		logger.Error("failed to init app", zap.Error(err))
 		panic(err)
 	}
 
 	go func() {
+		logger.Info("starting grpc server")
 		if err := wireApp.RunGRPC(); err != nil {
+			logger.Error("failed to run grpc server", zap.Error(err))
 			panic(err)
 		}
 	}()
+	time.Sleep(time.Second * 10)
 
 	if err := wireApp.RunHTTP(); err != nil {
+		logger.Error("failed to run http server", zap.Error(err))
 		panic(err)
 	}
 
@@ -115,38 +119,38 @@ func initProvider() (func(context.Context) error, error) {
 	return tracerProvider.Shutdown, nil
 }
 
-func initTracer(cfg *config.ViperConfig) (func(context.Context) error, error) {
-	// create a new zipkin exporter
-	exporter, err := zipkin.New(
-		cfg.Observability.Tracing.Zipkin.Url,
-		// zipkin.WithLogger(log.New(os.Stdout, "zipkin: ", log.LstdFlags)),
-	)
-	if err != nil {
-		return nil, err
-	}
-	batcher := sdktrace.NewBatchSpanProcessor(exporter)
-	// create a new trace provider
-	p := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader | b3.B3SingleHeader))
-	otel.SetTextMapPropagator(p)
+// func initTracer(cfg *config.ViperConfig) (func(context.Context) error, error) {
+// 	// create a new zipkin exporter
+// 	exporter, err := zipkin.New(
+// 		cfg.Observability.Tracing.Zipkin.Url,
+// 		// zipkin.WithLogger(log.New(os.Stdout, "zipkin: ", log.LstdFlags)),
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	batcher := sdktrace.NewBatchSpanProcessor(exporter)
+// 	// create a new trace provider
+// 	p := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader | b3.B3SingleHeader))
+// 	otel.SetTextMapPropagator(p)
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSpanProcessor(batcher),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("app"),
-			semconv.DeploymentEnvironmentKey.String("production"),
-		),
-		),
-	)
-	// register the trace provider
-	otel.SetTracerProvider(tp)
+// 	tp := sdktrace.NewTracerProvider(
+// 		sdktrace.WithSpanProcessor(batcher),
+// 		sdktrace.WithResource(resource.NewWithAttributes(
+// 			semconv.SchemaURL,
+// 			semconv.ServiceNameKey.String("app"),
+// 			semconv.DeploymentEnvironmentKey.String("production"),
+// 		),
+// 		),
+// 	)
+// 	// register the trace provider
+// 	otel.SetTracerProvider(tp)
 
-	// otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+// 	// otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-	// register the global propagator
-	return tp.Shutdown, nil
+// 	// register the global propagator
+// 	return tp.Shutdown, nil
 
-}
+// }
 
 // init zap logger from config
 func initZapLogger(conf *config.ViperConfig) *zap.Logger {
@@ -188,32 +192,32 @@ func initZapLogger(conf *config.ViperConfig) *zap.Logger {
 }
 
 // get zerolog logger
-func initZerologLogger(conf *config.ViperConfig) zerolog.Logger {
-	// writer
-	writers := []io.Writer{}
-	// add stdout
-	writers = append(writers, os.Stdout)
+// func initZerologLogger(conf *config.ViperConfig) zerolog.Logger {
+// 	// writer
+// 	writers := []io.Writer{}
+// 	// add stdout
+// 	writers = append(writers, os.Stdout)
 
-	switch conf.Observability.Logging.Level {
-	case "debug":
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	case "info":
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	case "warn":
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	case "error":
-		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	case "fatal":
-		zerolog.SetGlobalLevel(zerolog.FatalLevel)
-	case "panic":
-		zerolog.SetGlobalLevel(zerolog.PanicLevel)
-	default:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	}
+// 	switch conf.Observability.Logging.Level {
+// 	case "debug":
+// 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+// 	case "info":
+// 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+// 	case "warn":
+// 		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+// 	case "error":
+// 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+// 	case "fatal":
+// 		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+// 	case "panic":
+// 		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+// 	default:
+// 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+// 	}
 
-	// add file
-	multi := io.MultiWriter(writers...)
+// 	// add file
+// 	multi := io.MultiWriter(writers...)
 
-	return zerolog.New(multi).With().Timestamp().Logger()
-	// ...
-}
+// 	return zerolog.New(multi).With().Timestamp().Logger()
+// 	// ...
+// }
